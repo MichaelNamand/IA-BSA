@@ -1,9 +1,22 @@
 #include "algorithm.h"
+#include <random>
+bool Exists(int tempM, int* mutT, int randomMutants)
+{
+    int j;
+    for (j = 1; j <= randomMutants; j++)
+    {
+        if (mutT[j] == tempM)
+            return true;
+    }
+    return false;
+}
 
+#define mixrate 0.5
 
 Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
     _setup(setup), _population()
 {
+    double* runTab = new double[setup.independent_runs()];
     _fitness_values_of_current_population.resize(setup.independent_runs());
 
     //Tableaux dynamiques 2D
@@ -21,9 +34,9 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
     int* mutT = new int[pbm.dimension()];
 
     //Initialisation des variables pour la comparaison de fitnesse
-    _global_best_solution->random(pbm.UpperLimit, pbm.LowerLimit);
-    _lower_cost = _global_best_solution.fitness(_global_best_solution.tabLine);
-    _upper_cost = _lower_cost;
+    global_best_solution().random(pbm.UpperBound, pbm.LowerBound);
+    int _lower_cost = global_best_solution().fitness(global_best_solution().get_solution());
+    int _upper_cost = _lower_cost;
 
     //Variables interm?diaires pour la fitnesse
     double min;
@@ -37,7 +50,7 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
 
     int i, j;
 
-    globalMin = std::numeric_limits<double>::infinity(); //  valeur = infini
+    int globalMin = std::numeric_limits<double>::infinity(); //  valeur = infini
 
     for (int r = 0; r < setup.independent_runs(); r++)
     {
@@ -74,23 +87,23 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
         //Assign?s des valeurs ? la Population
         for (i = 0; i < setup.population_size(); i++)
         {
-            _global_best_solution.tabLine.clear();
-            _global_best_solution.random(pbm.UpperLimit, pbm.LowerLimit);
+            global_best_solution().get_solution().clear();
+            global_best_solution().random(pbm.UpperBound, pbm.LowerBound);
             for (j = 0; j < pbm.dimension(); j++)
             {
-                P[i][j] = _global_best_solution.tabLine[j];
+                P[i][j] = global_best_solution().get_solution()[j];
             }
-            fitP[i] = _global_best_solution.fitness(_global_best_solution.tabLine);   // initialisation du tableau de fitnesse de Population
+            fitP[i] = global_best_solution().fitness(global_best_solution().get_solution());   // initialisation du tableau de fitnesse de Population
         }
 
         //Assign?s des valeurs ? la OldPopulation
         for (i = 0; i < setup.population_size(); i++)
         {
-            _global_best_solution.tabLine.clear();
-            _global_best_solution.random(pbm.UpperLimit, pbm.LowerLimit);
+            global_best_solution().get_solution().clear();
+            global_best_solution().random(pbm.UpperBound, pbm.LowerBound);
             for (j = 0; j < pbm.dimension(); j++)
             {
-                oldP[i][j] = _global_best_solution.tabLine[j];
+                oldP[i][j] = global_best_solution().get_solution()[j];
             }
         }
 
@@ -113,13 +126,13 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
                 }
                 else if (fitP[i] < min) {
                     _lower_cost = fitP[i];
-                    min = best_cost();
+                    min = _lower_cost;
                     flag = 2;
                     id = i;
                 }
                 else if (fitP[i] > max) {
                     _upper_cost = fitP[i];
-                    max = worst_cost();
+                    max = _upper_cost;
                     flag = 3;
                     id = i;
                 }
@@ -209,15 +222,15 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
                 }
             }
 
-            randomMutants = (int)ceil(setup.getMixRate() * pbm.dimension() * a);
+            int randomMutants = (int)ceil(mixrate * pbm.dimension() * a);
             if (c < d)
             {
                 for (i = 0; i < setup.population_size(); i++)
                 {
-                    tempMut = rand() % pbm.dimension();
+                    int tempMut = rand() % pbm.dimension();
                     for (j = 1; j <= randomMutants; j++)
                     {
-                        while (Exists(tempMut) && mutT != NULL)
+                        while (Exists(tempMut, mutT, randomMutants) && mutT != NULL)
                         {
                             tempMut = rand() % pbm.dimension();
                         }
@@ -264,17 +277,17 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
 
             for (i = 0; i < setup.population_size(); i++)
             {
-                _global_best_solution.tabLine.clear();
+                global_best_solution().get_solution().clear();
 
                 for (j = 0; j < pbm.dimension(); j++)
                 {
-                    if (T[i][j] < pbm.LowerLimit || T[i][j] > pbm.UpperLimit)
+                    if (T[i][j] < pbm.LowerBound || T[i][j] > pbm.UpperBound)
                     {
-                        T[i][j] = pbm.LowerLimit + (pbm.UpperLimit - pbm.LowerLimit) * (double)rand() / RAND_MAX;
+                        T[i][j] = pbm.LowerBound + (pbm.UpperBound - pbm.LowerBound) * (double)rand() / RAND_MAX;
                     }
-                    _global_best_solution.tabLine.push_back(T[i][j]);
+                    global_best_solution().get_solution().push_back(T[i][j]);
                 }
-                fitT[i] = _global_best_solution.fitness(_global_best_solution.tabLine); // la modification de T change la fitnesse
+                fitT[i] = global_best_solution().fitness(global_best_solution().get_solution()); // la modification de T change la fitnesse
             }
 
             /*---------------------------------------------------------------------*/
@@ -297,7 +310,7 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
 
             //Global fit
 
-            fitBest = best_cost();
+            fitBest = _lower_cost;
 
             if (fitBest <= globalMin)
             {
@@ -390,25 +403,3 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
     delete[] mutT;
     delete[] runTab;
 }
-
-double MyAlgorithm::best_cost()  const
-{
-    return _lower_cost;
-}
-
-double MyAlgorithm::worst_cost()  const
-{
-    return _upper_cost;
-}
-
-bool MyAlgorithm::Exists(int tempM)
-{
-    int j;
-    for (j = 1; j <= randomMutants; j++)
-    {
-        if (mutT[j] == tempM)
-            return true;
-    }
-    return false;
-}
-

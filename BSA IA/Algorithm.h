@@ -13,13 +13,13 @@ class Problem
 public:
 	Problem();
 	~Problem();
+	double LowerBound, UpperBound;
 
 	int dimension() const;
 
 private:
 
 	int _dimension;
-	double LowerBound, UpperBound;
 };
 //=======================================================================
 class Solution
