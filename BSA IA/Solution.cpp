@@ -10,11 +10,11 @@ Solution::Solution(const Solution& sol) :
 	_fitness_current(sol._fitness_current), _pbm(sol.pbm)
 {}
 
-ostream& operator << (ostream& os, Solution& sol)
+/*ostream& operator << (ostream& os, Solution& sol)
 {
 	os << "Current Fitness : " << sol.get_fitness() << endl;
 	return os;
-}
+}*/
 
 void Solution::initialize()
 {
@@ -23,7 +23,7 @@ void Solution::initialize()
 	int j;
 	for (j = 0; j < _pbm.dimension(); j++)
 	{
-		_solution.push_back(lower + (upper - lower) * (double)rand() / RAND_MAX);
+		_solution.push_back(_pbm.LowerBound + (_pbm.UpperBound - _pbm.LowerBound) * (double)rand() / RAND_MAX);
 	}
 }
 
@@ -34,99 +34,104 @@ vector<double>& Solution::get_solution() {
 double Solution::fitness()
 {
 	double sum = 0.0;
+	double sum2 = 0.0;
+	double prod = 0.0;
 	_fitness_current = 0.0;
+	int a = 0.5;
+	int b = 3.0;
 
-	int j; // limité à la dim
+	int j; // limité à la _pbm.dimension()
 
 	switch (_pbm.getFuncId())
 	{
-	case 1: // Rosenbrock
+	case 1: // Discus
+
+		for (j = 1; j < _pbm.dimension() - 1; j++)
+		{
+			sum += pow(_solution[0], 2);
+		}
+
+		_fitness_current = pow(10, 6) * pow(_solution[0], 2) + sum;
+
+		break;
+
+	case 2: // Bent Cigar
+
+		for (j = 0; j < _pbm.dimension(); j++)
+		{
+			sum += pow(_solution[j], 2);
+		}
+
+		_fitness_current = pow(_solution[0], 2) + pow(10, 6) * sum;
+
+		break;
+
+	case 3: // Weierstrass
+
+		unsigned int k_max = 20;
+
+		for (j = 0; j < _pbm.dimension(); j++)
+		{
+			for (int i = 0; i <= k_max; i++)
+			{
+				sum += pow(a, (double)i) * cos(2 * PI * pow(b, (double)i) * (_solution[j] + 0.5));
+			}
+		}
+
+		for (int i = 0; i <= k_max; i++)
+		{
+			sum2 += pow(a, (double)i) * cos(2 * PI * pow(b, (double)i) * 0.5);
+		}
+
+		_fitness_current = sum - _pbm.dimension() * sum2;
+		
+		break;
+
+	case 4: // Katsuura
 
 		for (j = 0; j < _pbm.dimension() - 1; j++)
 		{
-			if (j + 1 < _solution.size()) {
-				sum = 100 * (pow((_solution[j + 1] - pow(_solution[j], 2)), 2)) + pow(_solution[j] - 1, 2);
+			for (int i = 0; i < 32; i++)
+			{
+				sum += abs(pow(2.0, (double)i) * _solution[j] - round(pow(2.0, (double)i) * _solution[j])) / pow(2.0, (double)i);
 			}
+
+			prod *= 1 + j * pow(sum, (10 / pow(_pbm.dimension(), 12.0)));
 		}
 
-		_fitness_current = sum;
+		_fitness_current = (10 / pow(_pbm.dimension(), 2)) * prod - (10 / pow(_pbm.dimension(), 2));
 
 		break;
 
-	case 2: // Rastrigin
-
-		for (j = 0; j < _pbm.dimension(); j++)
-		{
-			if (j < _solution.size()) {
-				sum = pow(_solution[j], 2) - (10 * cos(2 * PI * _solution[j]));
-			}
-		}
-
-		_fitness_current = (10 * _pbm.dimension()) + sum;
-
-		break;
-
-	case 3: // Ackley
-
-		double A, B;
-
-		for (j = 0; j < _pbm.dimension(); j++)
-		{
-			A = pow(_solution[j], 2);
-			B = cos(2 * PI * _solution[j]);
-		}
-		sum = -20 * exp(-0.2 * sqrt((1 / _pbm.dimension()) * A)) - exp((1 / _pbm.dimension()) * B) + 20 + exp(1);
-
-		_fitness_current = sum;
-
-		break;
-
-	case 4: // Schwefel
-
-		for (int j = 0; j < _pbm.dimension(); j++)
-		{
-			if (j < _solution.size()) {
-				sum = _solution[j] * sin(sqrt(abs(_solution[j])));
-			}
-		}
-
-		_fitness_current = 418.9829 * _pbm.dimension() - sum;
-
-		break;
-
-	case 5: // schaffer
+	case 5: // HappyCat
 
 		for (int j = 0; j < _pbm.dimension() - 1; j++)
 		{
-			if (j < _solution.size()) {
-				sum = (pow(sin(pow(_solution[j], 2) - pow(_solution[j + 1], 2)), 2) - 0.5) / (pow(1 + 0.001 * (pow(_solution[j], 2) + pow(_solution[j + 1], 2)), 2));
-			}
+			sum += pow(_solution[j], 2.0);
 		}
 
-		_fitness_current = 0.5 + sum;
+		for (int j = 0; j < _pbm.dimension() - 1; j++)
+		{
+			sum2 += _solution[j];
+		}
+		_fitness_current = pow(abs(sum - (double)_pbm.dimension()), 1 / 4) + (0.5 * sum + sum2) / _pbm.dimension() + 0.5;
 
 		break;
 
-	case 6: // Weierstrass
+	case 6: // HGBat
 
-		int i = 0;
-		double a, b;
-		unsigned int k_max;
-		a = 0.5;
-		b = 3.0;
-		k_max = 20;
 
-		for (int j = 0; j < _pbm.dimension(); j++)
+		for (int j = 0; j < _pbm.dimension() - 1; j++)
 		{
-			for (unsigned int t = 0; t <= k_max; t++)
-			{
-				if (j < _solution.size()) {
-					sum += pow(a, (double)t) * cos(2.0 * PI * pow(b, (double)t) * (_solution[j] + 0.5));
-				}
-			}
+			sum += pow(_solution[j], 2.0);
 		}
 
-		_fitness_current = sum;
+		for (int j = 0; j < _pbm.dimension() - 1; j++)
+		{
+			sum2 += _solution[j];
+		}
+
+		_fitness_current = pow(abs(pow(sum, 2.0) - pow(sum2, 2.0)), 1 / 2) + (0.5 * sum + sum2) / _pbm.dimension() + 0.5;
 
 		break;
 	}
