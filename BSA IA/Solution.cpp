@@ -7,8 +7,17 @@ Solution::Solution(const Problem& _pbm) :
 {}
 
 Solution::Solution(const Solution& sol) :
-	_fitness_current(sol._fitness_current), _pbm(sol.pbm)
+	_fitness_current(sol._fitness_current), _pbm(sol._pbm)
 {}
+
+Solution::~Solution()
+{
+}
+
+const Problem& Solution::pbm() const
+{
+	return _pbm;
+}
 
 /*ostream& operator << (ostream& os, Solution& sol)
 {
@@ -19,7 +28,6 @@ Solution::Solution(const Solution& sol) :
 void Solution::initialize()
 {
 	SetUpParams set;
-
 	int j;
 	for (j = 0; j < _pbm.dimension(); j++)
 	{
@@ -41,8 +49,10 @@ double Solution::fitness()
 	int b = 3.0;
 
 	int j; // limité à la _pbm.dimension()
+	int fnId = 1;
+	unsigned int k_max = 20;
 
-	switch (_pbm.getFuncId())
+	switch (fnId)
 	{
 	case 1: // Discus
 
@@ -67,8 +77,6 @@ double Solution::fitness()
 		break;
 
 	case 3: // Weierstrass
-
-		unsigned int k_max = 20;
 
 		for (j = 0; j < _pbm.dimension(); j++)
 		{

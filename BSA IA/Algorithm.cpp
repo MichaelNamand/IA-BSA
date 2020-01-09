@@ -16,26 +16,40 @@ bool Exists(int tempM, int* mutT, int randomMutants)
 Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
     _setup(setup), _population()
 {
-    double* runTab = new double[setup.independent_runs()];
-    _fitness_values_of_current_population.resize(setup.independent_runs());
+    _global_best_solution = new Solution(pbm);
+}
+
+Algorithm::~Algorithm()
+{
+}
+
+const SetUpParams& Algorithm::setup() const
+{
+    return _setup;
+}
+
+void Algorithm::initialize()
+{
+    double* runTab = new double[setup().independent_runs()];
+    _fitness_values_of_current_population.resize(setup().independent_runs());
 
     //Tableaux dynamiques 2D
-    double** oldP = new double* [setup.population_size()];
-    double** P = new double* [setup.population_size()];
-    double** Mutant = new double* [setup.population_size()];
-    double** map = new double* [setup.population_size()];
-    double** T = new double* [setup.population_size()];
+    double** oldP = new double* [setup().population_size()];
+    double** P = new double* [setup().population_size()];
+    double** Mutant = new double* [setup().population_size()];
+    double** map = new double* [setup().population_size()];
+    double** T = new double* [setup().population_size()];
 
     //Tableaux dynamique 1D : popsize*1
-    double* fitP = new double[setup.population_size()];
-    double* fitT = new double[setup.population_size()];
-    double* globalMinimizer = new double[pbm.dimension()];
+    double* fitP = new double[setup().population_size()];
+    double* fitT = new double[setup().population_size()];
+    double* globalMinimizer = new double[global_best_solution().pbm().dimension()];
 
-    int* mutT = new int[pbm.dimension()];
+    int* mutT = new int[global_best_solution().pbm().dimension()];
 
     //Initialisation des variables pour la comparaison de fitnesse
-    global_best_solution().random(pbm.UpperBound, pbm.LowerBound);
-    int _lower_cost = global_best_solution().fitness(global_best_solution().get_solution());
+    global_best_solution().initialize();
+    int _lower_cost = global_best_solution().fitness();
     int _upper_cost = _lower_cost;
 
     //Variables interm?diaires pour la fitnesse
@@ -48,74 +62,74 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
     int indexBest;
     int indexWorst;
 
-    int i, j;
+    unsigned int i, j;
 
     int globalMin = std::numeric_limits<double>::infinity(); //  valeur = infini
 
-    for (int r = 0; r < setup.independent_runs(); r++)
+    for (unsigned int r = 0; r < setup().independent_runs(); r++)
     {
         cout << "Nb d'execution : " << r << endl;
 
         //Creation des tableaux
-        for (i = 0; i < setup.population_size(); i++)
+        for (i = 0; i < setup().population_size(); i++)
         {
-            P[i] = new double[pbm.dimension()];
+            P[i] = new double[global_best_solution().pbm().dimension()];
         }
 
-        for (i = 0; i < setup.population_size(); i++)
+        for (i = 0; i < setup().population_size(); i++)
         {
-            oldP[i] = new double[pbm.dimension()];
+            oldP[i] = new double[global_best_solution().pbm().dimension()];
         }
 
-        for (i = 0; i < setup.population_size(); i++)
+        for (i = 0; i < setup().population_size(); i++)
         {
-            Mutant[i] = new double[pbm.dimension()];
+            Mutant[i] = new double[global_best_solution().pbm().dimension()];
         }
 
-        for (i = 0; i < setup.population_size(); i++)
+        for (i = 0; i < setup().population_size(); i++)
         {
-            map[i] = new double[pbm.dimension()];
+            map[i] = new double[global_best_solution().pbm().dimension()];
         }
 
-        for (i = 0; i < setup.population_size(); i++)
+        for (i = 0; i < setup().population_size(); i++)
         {
-            T[i] = new double[pbm.dimension()];
+            T[i] = new double[global_best_solution().pbm().dimension()];
         }
 
         int flag = 0;
 
         //Assign?s des valeurs ? la Population
-        for (i = 0; i < setup.population_size(); i++)
+        for (i = 0; i < setup().population_size(); i++)
         {
             global_best_solution().get_solution().clear();
-            global_best_solution().random(pbm.UpperBound, pbm.LowerBound);
-            for (j = 0; j < pbm.dimension(); j++)
+            global_best_solution().initialize();
+            for (j = 0; j < global_best_solution().pbm().dimension(); j++)
             {
                 P[i][j] = global_best_solution().get_solution()[j];
             }
-            fitP[i] = global_best_solution().fitness(global_best_solution().get_solution());   // initialisation du tableau de fitnesse de Population
+            fitP[i] = global_best_solution().fitness();   // initialisation du tableau de fitnesse de Population
         }
 
         //Assign?s des valeurs ? la OldPopulation
-        for (i = 0; i < setup.population_size(); i++)
+        for (i = 0; i < setup().population_size(); i++)
         {
             global_best_solution().get_solution().clear();
-            global_best_solution().random(pbm.UpperBound, pbm.LowerBound);
-            for (j = 0; j < pbm.dimension(); j++)
+            global_best_solution().initialize();
+            for (j = 0; j < global_best_solution().pbm().dimension(); j++)
             {
                 oldP[i][j] = global_best_solution().get_solution()[j];
             }
         }
 
 
-        for (int k = 0; k < setup.nb_evolution_steps(); k++)
+        for (int k = 0; k < setup().nb_evolution_steps(); k++)
         {
             min = fitP[0];
             max = fitP[0];
 
             int id;
 
-            for (i = 0; i < setup.population_size(); i++)
+            for (i = 0; i < setup().population_size(); i++)
             {
                 if (fitP[i] == fitP[0])
                 {
@@ -162,9 +176,9 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
 
 
             //selection 1
-            for (i = 0; i < setup.population_size(); i++)
+            for (i = 0; i < setup().population_size(); i++)
             {
-                for (j = 0; j < pbm.dimension(); j++)
+                for (j = 0; j < global_best_solution().pbm().dimension(); j++)
                 {
                     if (a < b)
                     {
@@ -174,13 +188,13 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
             }
 
             //permutation
-            for (i = 0; i < setup.population_size(); i++)
+            for (i = 0; i < setup().population_size(); i++)
             {
-                for (j = 0; j < pbm.dimension() / 2; j++)
+                for (j = 0; j < global_best_solution().pbm().dimension() / 2; j++)
                 {
                     // g?n?ration de 2 position al?atoires
-                    int randA = rand() % setup.population_size();
-                    int randB = rand() % setup.population_size();
+                    int randA = rand() % setup().population_size();
+                    int randB = rand() % setup().population_size();
 
                     double temp;
 
@@ -202,9 +216,9 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
             normal_distribution<double> distribution(0.0, 1.0);
             double F;
 
-            for (i = 0; i < setup.population_size(); i++)
+            for (i = 0; i < setup().population_size(); i++)
             {
-                for (j = 0; j < pbm.dimension(); j++)
+                for (j = 0; j < global_best_solution().pbm().dimension(); j++)
                 {
                     F = 3 * distribution(generator);
 
@@ -214,25 +228,25 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
 
             //Crossover
 
-            for (i = 0; i < setup.population_size(); i++)
+            for (i = 0; i < setup().population_size(); i++)
             {
-                for (j = 0; j < pbm.dimension(); j++)
+                for (j = 0; j < global_best_solution().pbm().dimension(); j++)
                 {
                     map[i][j] = 1;
                 }
             }
 
-            int randomMutants = (int)ceil(mixrate * pbm.dimension() * a);
+            int randomMutants = (int)ceil(mixrate * global_best_solution().pbm().dimension() * a);
             if (c < d)
             {
-                for (i = 0; i < setup.population_size(); i++)
+                for (i = 0; i < setup().population_size(); i++)
                 {
-                    int tempMut = rand() % pbm.dimension();
+                    int tempMut = rand() % global_best_solution().pbm().dimension();
                     for (j = 1; j <= randomMutants; j++)
                     {
                         while (Exists(tempMut, mutT, randomMutants) && mutT != NULL)
                         {
-                            tempMut = rand() % pbm.dimension();
+                            tempMut = rand() % global_best_solution().pbm().dimension();
                         }
 
                         mutT[j] = tempMut;
@@ -245,26 +259,26 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
             else
             {
                 int randi;
-                for (i = 0; i < setup.population_size(); i++)
+                for (i = 0; i < setup().population_size(); i++)
                 {
-                    randi = rand() % pbm.dimension();
+                    randi = rand() % global_best_solution().pbm().dimension();
                     map[i][randi] = 0;
                 }
             }
 
             // Generation of a trial population
 
-            for (i = 0; i < setup.population_size(); i++)
+            for (i = 0; i < setup().population_size(); i++)
             {
-                for (j = 0; j < pbm.dimension(); j++)
+                for (j = 0; j < global_best_solution().pbm().dimension(); j++)
                 {
                     T[i][j] = Mutant[i][j];
                 }
             }
 
-            for (i = 0; i < setup.population_size(); i++)
+            for (i = 0; i < setup().population_size(); i++)
             {
-                for (j = 0; j < pbm.dimension(); j++)
+                for (j = 0; j < global_best_solution().pbm().dimension(); j++)
                 {
                     if (map[i][j] == 1)
                     {
@@ -275,28 +289,28 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
 
             //Boundary Control Mechanism
 
-            for (i = 0; i < setup.population_size(); i++)
+            for (i = 0; i < setup().population_size(); i++)
             {
                 global_best_solution().get_solution().clear();
 
-                for (j = 0; j < pbm.dimension(); j++)
+                for (j = 0; j < global_best_solution().pbm().dimension(); j++)
                 {
-                    if (T[i][j] < pbm.LowerBound || T[i][j] > pbm.UpperBound)
+                    if (T[i][j] < global_best_solution().pbm().LowerBound || T[i][j] > global_best_solution().pbm().UpperBound)
                     {
-                        T[i][j] = pbm.LowerBound + (pbm.UpperBound - pbm.LowerBound) * (double)rand() / RAND_MAX;
+                        T[i][j] = global_best_solution().pbm().LowerBound + (global_best_solution().pbm().UpperBound - global_best_solution().pbm().LowerBound) * (double)rand() / RAND_MAX;
                     }
                     global_best_solution().get_solution().push_back(T[i][j]);
                 }
-                fitT[i] = global_best_solution().fitness(global_best_solution().get_solution()); // la modification de T change la fitnesse
+                fitT[i] = global_best_solution().fitness(); // la modification de T change la fitnesse
             }
 
             /*---------------------------------------------------------------------*/
 
             //Selection 2
 
-            for (i = 0; i < setup.population_size(); i++)
+            for (i = 0; i < setup().population_size(); i++)
             {
-                for (j = 0; j < pbm.dimension(); j++)
+                for (j = 0; j < global_best_solution().pbm().dimension(); j++)
                 {
 
                     if (fitT[i] < fitP[i])
@@ -315,9 +329,9 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
             if (fitBest <= globalMin)
             {
                 globalMin = fitBest;
-                for (i = 0; i < setup.population_size(); i++)
+                for (i = 0; i < setup().population_size(); i++)
                 {
-                    for (j = 0; j < pbm.dimension(); j++)
+                    for (j = 0; j < global_best_solution().pbm().dimension(); j++)
                     {
                         if (i == indexBest)
                         {
@@ -329,7 +343,7 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
         } // fin k
 
         //cout << "Meilleur individu : " << indexBest << endl;
-        for (j = 0; j < pbm.dimension(); j++)
+        for (j = 0; j < global_best_solution().pbm().dimension(); j++)
         {
             //cout << globalMinimizer[j] << " ";
         }
@@ -352,47 +366,47 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
     double variance = 0.0;
     double deviation = 0.0;
 
-    for (i = 0; i < setup.independent_runs(); i++)
+    for (i = 0; i < setup().independent_runs(); i++)
     {
         sum += runTab[i];
     }
 
-    mean = sum / setup.independent_runs();
+    mean = sum / setup().independent_runs();
     cout << "Moyenne : " << mean << endl;
 
-    for (i = 0; i < setup.independent_runs(); i++)
+    for (i = 0; i < setup().independent_runs(); i++)
     {
         temp += pow((runTab[i] - mean), 2);
     }
 
-    variance = temp / setup.independent_runs();
+    variance = temp / setup().independent_runs();
     cout << "Variance : " << variance << endl;
 
     deviation = sqrt(variance);
     cout << "Ecart-type : " << deviation << endl;
 
     //delete tab
-    for (i = 0; i < pbm.dimension(); ++i) {
+    for (i = 0; i < global_best_solution().pbm().dimension(); ++i) {
         delete[] P[i];
     }
     delete[] P;
 
-    for (i = 0; i < pbm.dimension(); ++i) {
+    for (i = 0; i < global_best_solution().pbm().dimension(); ++i) {
         delete[] oldP[i];
     }
     delete[] oldP;
 
-    for (i = 0; i < pbm.dimension(); ++i) {
+    for (i = 0; i < global_best_solution().pbm().dimension(); ++i) {
         delete[] Mutant[i];
     }
     delete[] Mutant;
 
-    for (i = 0; i < pbm.dimension(); ++i) {
+    for (i = 0; i < global_best_solution().pbm().dimension(); ++i) {
         delete[] map[i];
     }
     delete[] map;
 
-    for (i = 0; i < pbm.dimension(); ++i) {
+    for (i = 0; i < global_best_solution().pbm().dimension(); ++i) {
         delete[] T[i];
     }
     delete[] T;
@@ -402,4 +416,9 @@ Algorithm::Algorithm(const Problem& pbm, const SetUpParams& setup) :
     delete[] globalMinimizer;
     delete[] mutT;
     delete[] runTab;
+}
+
+Solution& Algorithm::global_best_solution() const
+{
+    return *_global_best_solution;
 }

@@ -4,9 +4,6 @@ SetUpParams::SetUpParams() :
     _independent_runs(30), _nb_evolution_steps((int)((2 * pow(10, 6)) / 30)), _population_size(30), _solution_size(30)//,  mixrate(0.5)
 {}
 
-SetUpParams::SetUpParams(const SetUpParams& p) :
-    _independent_runs(p._independent_runs), _population_size(p._population_size), _nb_evolution_steps((int)((2 * pow(10, 6)) / p._population_size)), _solution_size(p._solution_size)//, mixrate(p.mixrate)
-{}
 
 ostream& operator << (ostream& os, SetUpParams& setup) {
     os << "_population_size : " << setup.population_size() << endl;
@@ -82,4 +79,8 @@ void SetUpParams::population_size(unsigned int val)
 void SetUpParams::solution_size(unsigned int val)
 {
     _solution_size = val;
+}
+
+SetUpParams::~SetUpParams()
+{
 }
