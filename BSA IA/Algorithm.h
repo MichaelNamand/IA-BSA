@@ -105,7 +105,6 @@ public:
 
 	// main loop of the algorithm 
 	void evolution();
-
 };
 
 #endif

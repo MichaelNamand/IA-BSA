@@ -20,27 +20,6 @@ ostream& operator << (ostream& os, SetUpParams& setup) {
     return os;
 }
 
-istream& operator >> (istream& is, SetUpParams& setup) {
-    cout << "_population_size : ";
-     setup.population_size(is.get());
-    cout << "_solution_sizeension : ";
-    setup.solution_size(is.get());
-    cout << "Nb d'Execution : ";
-    setup.independent_runs(is.get());
-    cout << "Nb de Generation : ";
-    if (setup.population_size() >= 30)
-    {
-        setup.nb_evolution_steps(((2 * pow(10, 6)) / setup.population_size()));
-    }
-    else {
-        setup.nb_evolution_steps(3000);
-    }
-    cout << setup.nb_evolution_steps() << endl;
-   
-
-    return is;
-}
-
 const unsigned int SetUpParams::independent_runs() const
 {
     return _independent_runs;

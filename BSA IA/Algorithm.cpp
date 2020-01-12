@@ -98,7 +98,7 @@ void Algorithm::initialize()
 
         int flag = 0;
 
-        //Assign?s des valeurs ? la Population
+        //Assigne des valeurs à la Population
         for (i = 0; i < setup().population_size(); i++)
         {
             global_best_solution().get_solution().clear();
@@ -110,7 +110,7 @@ void Algorithm::initialize()
             fitP[i] = global_best_solution().fitness();   // initialisation du tableau de fitnesse de Population
         }
 
-        //Assign?s des valeurs ? la OldPopulation
+        //Assigne des valeurs à la OldPopulation
         for (i = 0; i < setup().population_size(); i++)
         {
             global_best_solution().get_solution().clear();
@@ -120,7 +120,6 @@ void Algorithm::initialize()
                 oldP[i][j] = global_best_solution().get_solution()[j];
             }
         }
-
 
         for (int k = 0; k < setup().nb_evolution_steps(); k++)
         {
@@ -192,7 +191,7 @@ void Algorithm::initialize()
             {
                 for (j = 0; j < global_best_solution().pbm().dimension() / 2; j++)
                 {
-                    // g?n?ration de 2 position al?atoires
+                    // génération de 2 positions aléatoires
                     int randA = rand() % setup().population_size();
                     int randB = rand() % setup().population_size();
 
@@ -210,7 +209,7 @@ void Algorithm::initialize()
 
             //Mutation
 
-            // g?n?rer des valeurs al?atoires selon la distribution normale
+            // générer des valeurs aléatoires selon la distribution normale
 
             default_random_engine generator;
             normal_distribution<double> distribution(0.0, 1.0);
@@ -416,6 +415,11 @@ void Algorithm::initialize()
     delete[] globalMinimizer;
     delete[] mutT;
     delete[] runTab;
+}
+
+void Algorithm::evolution()
+{
+
 }
 
 Solution& Algorithm::global_best_solution() const
