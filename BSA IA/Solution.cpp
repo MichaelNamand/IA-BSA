@@ -107,7 +107,7 @@ double Solution::fitness()
 			prod *= 1 + j * pow(sum, (10 / pow(_pbm.dimension(), 12.0)));
 		}
 
-		_fitness_current = (10 / pow(_pbm.dimension(), 2)) * prod - (10 / pow(_pbm.dimension(), 2));
+		_fitness_current = (10 / pow(_pbm.dimension(), 2)) * prod - (10 / pow(_pbm.dimension(), 2)+258);
 
 		break;
 

@@ -88,7 +88,7 @@ int main() {
 		pbm.UpperBound = 0.5;
 		break;
 	case 4: // Katsuura
-		pbm.LowerBound = 0;
+		pbm.LowerBound = -100;
 		pbm.UpperBound = 100;
 		break;
 	case 5: // HappyCat
